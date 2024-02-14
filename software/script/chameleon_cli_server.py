@@ -65,6 +65,11 @@ class ChameleonCLI:
         # No matching child node
         return node, cmdline[:]
 
+    def is_connected(self):
+        """Return a boolean to check if the Chameleon is connected"""
+
+        return self.device_com.isOpen()
+
     def get_prompt(self):
         """
         Retrieve the cli prompt
