@@ -482,6 +482,7 @@ class HWConnect(BaseCLIUnit):
         return parser
 
     def on_exec(self, args: argparse.Namespace):
+        status = None
         try:
             if args.port is None:  # Chameleon auto-detect if no port is supplied
                 platform_name = uname().release
@@ -513,17 +514,22 @@ class HWConnect(BaseCLIUnit):
                             args.port = port.device
                             break
                 if args.port is None:  # If no chameleon was found, exit
-                    print("Chameleon not found, please connect the device or try connecting manually with the -p flag.")
-                    return
+                    status = ("Chameleon not found, please connect the device or try connecting manually with the -p flag.")
+                    print(status)
+                    return status
             self.device_com.open(args.port)
             self.device_com.commands = self.cmd.get_device_capabilities()
             major, minor = self.cmd.get_app_version()
             model = ['Ultra', 'Lite'][self.cmd.get_device_model()]
-            print(f" {{ Chameleon {model} connected: v{major}.{minor} }}")
+            status = (f" {{ Chameleon {model} connected: v{major}.{minor} }}")
+            print(status)
+            return status
+
 
         except Exception as e:
-            print(f"{CR}Chameleon Connect fail: {str(e)}{C0}")
+            status = (f"{CR}Chameleon Connect fail: {str(e)}{C0}")
             self.device_com.close()
+            return status
 
 
 @hw.command('disconnect')
@@ -945,7 +951,7 @@ class HFMFVALUE(ReaderRequiredUnit):
             return
         dst_key = bytearray.fromhex(dst_key)
         # print(dst_blk, dst_type, dst_key)
-        
+
         if args.inc is not None:
             self.inc_value(src_blk, src_type, src_key, args.inc, dst_blk, dst_type, dst_key)
             return
@@ -986,7 +992,7 @@ class HFMFVALUE(ReaderRequiredUnit):
         if value < 0 or value > 2147483647:
             raise ArgsParserError(f"Increment value must be between 0 and 2147483647. Got {value}")
         resp = self.cmd.mf1_manipulate_value_block(
-            src_blk, src_type, src_key, 
+            src_blk, src_type, src_key,
             MfcValueBlockOperator.INCREMENT, value,
             dst_blk, dst_type, dst_key
         )
@@ -995,12 +1001,12 @@ class HFMFVALUE(ReaderRequiredUnit):
             self.get_value(dst_blk, dst_type, dst_key)
         else:
             print(f" - {CR}Increment fail.{C0}")
-    
+
     def dec_value(self, src_blk, src_type, src_key, value, dst_blk, dst_type, dst_key):
         if value < 0 or value > 2147483647:
             raise ArgsParserError(f"Decrement value must be between 0 and 2147483647. Got {value}")
         resp = self.cmd.mf1_manipulate_value_block(
-            src_blk, src_type, src_key, 
+            src_blk, src_type, src_key,
             MfcValueBlockOperator.DECREMENT, value,
             dst_blk, dst_type, dst_key
         )
@@ -1012,7 +1018,7 @@ class HFMFVALUE(ReaderRequiredUnit):
 
     def res_value(self, src_blk, src_type, src_key, dst_blk, dst_type, dst_key):
         resp = self.cmd.mf1_manipulate_value_block(
-            src_blk, src_type, src_key, 
+            src_blk, src_type, src_key,
             MfcValueBlockOperator.RESTORE, 0,
             dst_blk, dst_type, dst_key
         )
@@ -1726,7 +1732,9 @@ class HWSlotSet(SlotIndexArgsUnit):
     def on_exec(self, args: argparse.Namespace):
         slot_index = args.slot
         self.cmd.set_active_slot(slot_index)
-        print(f" - Set slot {slot_index} activated success.")
+        status = (f" - Set slot {slot_index} activated success.")
+        print(status)
+        return status
 
 
 @hw_slot.command('type')
